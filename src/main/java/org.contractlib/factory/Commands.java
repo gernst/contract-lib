@@ -15,7 +15,7 @@ public interface Commands<Term, Type, Datatype, Command> {
 
 	Command declareDatatypes(List<Pair<String, Integer>> arities, List<Pair<String, Datatype>> datatypes);
 
-	Terms<Term, Type> terms(List<String> params, List<Pair<String, Type>> vars);
+	Terms<Term, Type> terms(List<Pair<String, Type>> variables);
 
 	Command declareFun(String name, List<String> params, List<Type> arguments, Type result);
 

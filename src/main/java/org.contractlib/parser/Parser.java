@@ -181,9 +181,9 @@ public class Parser extends Scanner {
 			switch (command) {
 			case "assert": {
 				List<String> params = List.of();
-				List<Pair<String, Type>> vars = List.of();
+				List<Pair<String, Type>> variables = List.of();
 				Types<Type> context = factory.types(params);
-				Terms<Term, Type> scope = factory.terms(params, vars);
+				Terms<Term, Type> scope = factory.terms(variables);
 				Term formula = term(context, scope);
 				expect(RPAREN);
 
@@ -227,7 +227,7 @@ public class Parser extends Scanner {
 				Types<Type> context = factory.types(params);
 				List<Pair<String, Type>> arguments = formals(context);
 				Type result = type(context);
-				Terms<Term, Type> scope = factory.terms(params, arguments);
+				Terms<Term, Type> scope = factory.terms(arguments);
 				Term body = term(context, scope);
 				expect(RPAREN);
 
@@ -246,7 +246,7 @@ public class Parser extends Scanner {
 					arguments_.add(new Pair(arg.first(), arg.second().second()));
 				}
 
-				Terms<Term, Type> scope = factory.terms(params, arguments_);
+				Terms<Term, Type> scope = factory.terms(arguments_);
 				List<Pair<Term, Term>> contracts = contracts(context, scope);
 				expect(RPAREN);
 
