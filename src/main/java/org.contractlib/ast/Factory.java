@@ -5,73 +5,80 @@ import org.contractlib.factory.Mode;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
 public class Factory implements org.contractlib.factory.Commands<Term, Type, Datatype, Command> {
 	public Types types(List<String> params) {
-		return Types.EMPTY.extend(params);
+		Types empty = new Types(Map.of());
+		return empty.extend(params);
 	}
 
 	public Command declareSort(String name, Integer arity) {
-		return null;
+		return new Command.DeclareSort(name, arity);
 	}
 
 	public Command defineSort(String name, List<String> params, Type body) {
-		return null;
+		return new Command.DefineSort(name, params, body);
 	}
 
 	public Datatypes datatypes(List<Pair<String, Integer>> arities) {
-		return null;
+		return new Datatypes();
 	}
 
 	public Command declareDatatypes(List<Pair<String, Integer>> arities, List<Pair<String, Datatype>> datatypes) {
-		return null;
+		return new Command.DeclareDatatypes(arities, datatypes);
 	}
 
 	public Terms terms(List<Pair<String, Type>> variables) {
-		return Terms.EMPTY.extended(variables);
+		Terms empty = new Terms(Map.of());
+		return empty.extended(variables);
 	}
 
 	public Command declareFun(String name, List<String> params, List<Type> arguments, Type result) {
-		return null;
+		return new Command.DeclareFun(name, params, arguments, result);
 	}
 
 	public Command defineFun(String name, List<String> params, List<Pair<String, Type>> arguments, Type result,
 			Term body) {
-		return null;
+		return new Command.DefineFun(name, params, arguments, result, body);
 	}
 
 	public Command declareProc(String name, List<String> params, List<Pair<String, Pair<Mode, Type>>> arguments,
 			List<Pair<Term, Term>> contracts) {
-		return null;
+		return new Command.DeclareProc(name, params, arguments, contracts);
 	}
 
 	public Command assertion(Term term) {
 		return new Command.Assert(term);
 	}
 
-	record Datatypes() implements org.contractlib.factory.Datatypes<Type, Datatype> {
+	class Datatypes implements org.contractlib.factory.Datatypes<Type, Datatype> {
+		public Types types(List<String> params) {
+			Types empty = new Types(Map.of());
+			return empty.extend(params);
+		}
+
 		public Datatype datatype(String name, List<String> params,
 				List<Pair<String, List<Pair<String, List<Type>>>>> constrs) {
-			return null;
+			return new Datatype(name, params, constrs);
 		}
 	}
 
-	record Types(Map<String, Type.Param> context) implements org.contractlib.factory.Types<Type> {
-		public static final Types EMPTY = new Types(Map.of());
+	class Types implements org.contractlib.factory.Types<Type> {
+		final Map<String, Type.Param> context;
+
+		public Types(Map<String, Type.Param> context) {
+			this.context = context;
+		}
 
 		public Type identifier(String name) {
-			switch (name) {
-			case "Bool":
-				return Type.BOOL;
-			case "Int":
-				return Type.INT;
-			case "Real":
-				return Type.REAL;
-			default:
-				// TODO: honor sorts without parameters here!
+			if (context.containsKey(name)) {
 				return context.get(name);
+			} else {
+				return sort(name, List.of());
 			}
 		}
 
@@ -93,24 +100,22 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
 		}
 	}
 
-	record Terms(Map<String, Term.Variable> scope) implements org.contractlib.factory.Terms<Term, Type> {
-		public static final Terms EMPTY = new Terms(Map.of());
+	class Terms implements org.contractlib.factory.Terms<Term, Type> {
+		final Map<String, Term.Variable> scope;
+
+		public Terms(Map<String, Term.Variable> scope) {
+			this.scope = scope;
+		}
 
 		public Term literal(Object value) {
 			return new Term.Literal(value);
 		}
 
 		public Term identifier(String name) {
-			switch (name) {
-			case "true":
-				return Term.TRUE;
-
-			case "false":
-				return Term.FALSE;
-
-			default:
-                // TODO: honor constants/nullary functions here
+			if (scope.containsKey(name)) {
 				return scope.get(name);
+			} else {
+				return application(name, List.of());
 			}
 		}
 

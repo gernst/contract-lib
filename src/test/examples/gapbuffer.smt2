@@ -1,0 +1,3 @@
+(declare-proc GapBuffer.init
+    ()
+    ())

@@ -17,7 +17,7 @@ public class Parser extends Scanner {
 		super(reader);
 	}
 
-	public SExpr sexpr() throws IOException {
+	public List<SExpr> sexprs() throws IOException {
 		Token token;
 
 		Stack<Object> stack = new Stack<>();
@@ -42,15 +42,24 @@ public class Parser extends Scanner {
 			}
 		}
 
-		if (stack.size() != 1) {
-			throw new RuntimeException("unbalanced parentheses");
+		List<SExpr> result = new ArrayList<>();
+
+		for (Object expr : stack) {
+			result.add((SExpr) expr);
 		}
 
-		return (SExpr) stack.pop();
+		return result;
 	}
 
 	static interface Action<T> {
 		T get() throws IOException;
+	}
+
+	public <T> T parens(Action<T> action) throws IOException {
+		expect(LPAREN);
+		T result = action.get();
+		expect(RPAREN);
+		return result;
 	}
 
 	public <T> List<T> repeat(Action<T> action) throws IOException {
@@ -86,6 +95,10 @@ public class Parser extends Scanner {
 		return repeat(() -> formal(context));
 	}
 
+	public <Type, Datatype> List<Pair<String, Datatype>> datatypes(Datatypes<Type, Datatype> data) throws IOException {
+		return repeat(() -> datatype(data));
+	}
+
 	public <Type> List<Pair<String, Pair<Mode, Type>>> formalsWithMode(Types<Type> context) throws IOException {
 		return repeat(() -> formalWithMode(context));
 	}
@@ -94,14 +107,24 @@ public class Parser extends Scanner {
 		return repeat(() -> identifier());
 	}
 
+	public List<String> params() throws IOException {
+		return repeat(() -> param());
+	}
+
+	public List<Pair<String, Integer>> arities() throws IOException {
+		return repeat(() -> arity());
+	}
+
 	public <Type> Type type(Types<Type> context) throws IOException {
-        Token token = next();
+        Token token = peek();
 
 		switch(token) {
 		case Identifier id:
+			next();
 			return context.identifier(id.name());
 
 		case LParen lp:
+			expect(LPAREN);
 			String name = identifier();
 			List<Type> arguments = types(context);
 			expect(RPAREN);
@@ -109,7 +132,6 @@ public class Parser extends Scanner {
 			return context.sort(name, arguments);
 
         default:
-            unexpected(token);
             return null;
 		}
 	}
@@ -141,6 +163,53 @@ public class Parser extends Scanner {
 		}
 	}
 
+	public String param() throws IOException {
+		Token token  = peek();
+
+		switch(token) {
+			case Identifier identifier:
+				next();
+
+				return identifier.name();
+
+			default:
+				return null;
+		}
+	}
+
+	public Pair<String, Integer> arity() throws IOException {
+		if (check(LPAREN)) {
+			String id = identifier();
+			Integer args = integer();
+			expect(RPAREN);
+
+			return new Pair(id, args);
+		} else {
+			return null;
+		}
+	}
+
+	public <Type, Datatype> Pair<String, Datatype> datatype(Datatypes<Type, Datatype> data) throws IOException {
+		if (check(LPAREN)) {
+			Token token = peek();
+
+			switch(token) {
+				case Identifier identifier:
+					if(!identifier.name().equals("par"))
+						unexpected(token);
+
+					throw new UnsupportedOperationException();
+
+				default:
+					List<String> params = List.of();
+					Types<Type> context = data.types(params);
+					throw new UnsupportedOperationException();
+			}
+		} else {
+			return null;
+		}
+	}
+
 	public Mode mode() throws IOException {
 		String id = identifier();
 
@@ -160,9 +229,12 @@ public class Parser extends Scanner {
 	public <Type> Pair<String, Pair<Mode, Type>> formalWithMode(Types<Type> context) throws IOException {
 		if (check(LPAREN)) {
 			String name = identifier();
+
 			expect(LPAREN);
 			Mode mode = mode();
 			Type type = type(context);
+			expect(RPAREN);
+
 			Pair<String, Pair<Mode, Type>> result = new Pair(name, new Pair(mode, type));
 			expect(RPAREN);
 
@@ -200,7 +272,7 @@ public class Parser extends Scanner {
 
 			case "define-sort": {
 				String sort = identifier();
-				List<String> params = identifiers();
+				List<String> params = parens(() -> params());
 				Types<Type> context = factory.types(params);
 				Type body = type(context);
 				expect(RPAREN);
@@ -213,7 +285,7 @@ public class Parser extends Scanner {
 				// TODO: add syntax for parameters
 				List<String> params = List.of();
 				Types<Type> context = factory.types(params);
-				List<Type> arguments = types(context);
+				List<Type> arguments = parens(() -> types(context));
 				Type result = type(context);
 				expect(RPAREN);
 
@@ -225,7 +297,7 @@ public class Parser extends Scanner {
 				// TODO: add syntax for parameters
 				List<String> params = List.of();
 				Types<Type> context = factory.types(params);
-				List<Pair<String, Type>> arguments = formals(context);
+				List<Pair<String, Type>> arguments = parens(() -> formals(context));
 				Type result = type(context);
 				Terms<Term, Type> scope = factory.terms(arguments);
 				Term body = term(context, scope);
@@ -235,11 +307,20 @@ public class Parser extends Scanner {
 				return factory.defineFun(function, params, arguments, result, body);
 			}
 
+			case "declare-datatypes": {
+				List<Pair<String, Integer>> arities = parens(() -> arities());
+				Datatypes<Type, Datatype> context = factory.datatypes(arities);
+
+				List<Pair<String, Datatype>> datatypes = parens(() -> datatypes(context));
+
+				return factory.declareDatatypes(arities, datatypes);
+			}
+
 			case "declare-proc": {
 				String procedure = identifier();
 				List<String> params = List.of();
 				Types<Type> context = factory.types(params);
-				List<Pair<String, Pair<Mode, Type>>> arguments = formalsWithMode(context);
+				List<Pair<String, Pair<Mode, Type>>> arguments = parens(() -> formalsWithMode(context));
 
 				List<Pair<String, Type>> arguments_ = new ArrayList<>();
 				for (Pair<String, Pair<Mode, Type>> arg : arguments) {
@@ -247,7 +328,7 @@ public class Parser extends Scanner {
 				}
 
 				Terms<Term, Type> scope = factory.terms(arguments_);
-				List<Pair<Term, Term>> contracts = contracts(context, scope);
+				List<Pair<Term, Term>> contracts = parens(() -> contracts(context, scope));
 				expect(RPAREN);
 
 				return factory.declareProc(procedure, params, arguments, contracts);
@@ -263,16 +344,20 @@ public class Parser extends Scanner {
 	}
 
 	public <Term, Type> Term term(Types<Type> context, Terms<Term, Type> scope) throws IOException {
-        Token token = next();
+        Token token = peek(); // do not shift this token, as it could be a RPAREN that indicates end of the argument list
 
         switch (token) {
 		case Literal lit:
+			next();
 			return scope.literal(lit.value());
 
 		case Identifier id:
+			next();
 			return scope.identifier(id.name());
 
         case LParen lp:
+			expect(LPAREN);
+
             String function = identifier(); // TODO: extend this to indexed functions
 
 			switch(function) {
@@ -285,7 +370,7 @@ public class Parser extends Scanner {
 			case "exists":
 			case "forall":
 			case "lambda":
-				List<Pair<String, Type>> formals = formals(context);
+				List<Pair<String, Type>> formals = parens(() -> formals(context));
 				Terms<Term, Type> scope_ = scope.extended(formals);
 				Term body = term(context, scope_);
 				expect(RPAREN);
@@ -379,12 +464,6 @@ public class Parser extends Scanner {
 		return atom;
 	}
 
-	void expect(Token token) throws IOException {
-		Token next = next();
-		if (next != token)
-			unexpected(next);
-	}
-
 	boolean check(Token token) throws IOException {
 		if (peek() == token) {
 			next();
@@ -397,22 +476,38 @@ public class Parser extends Scanner {
 	Token pending = null;
 
 	Token peek() throws IOException {
-		if (pending == null)
+		if (pending == null) {
 			pending = shift();
+			// System.out.println("shifted: " + pending);
+		}
+
 		return pending;
 	}
 
 	Token next() throws IOException {
-		if (pending == null)
+		if (pending == null) {
 			pending = shift();
+			// System.out.println("shifted: " + pending);
+		}
 
 		Token result = pending;
-		pending = shift();
+		pending = null;
+
 		return result;
+	}
+
+	void expect(Token token) throws IOException {
+		Token next = next();
+		if (next != token)
+			unexpected(next, token);
 	}
 
 	Token unexpected(Token token) {
 		throw new RuntimeException("unexpected token " + token);
+	}
+
+	Token unexpected(Token token, Token expected) {
+		throw new RuntimeException("expected token " + expected + " but found " + token);
 	}
 
 	Token unexpected(String text) {
