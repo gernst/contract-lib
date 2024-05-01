@@ -55,6 +55,10 @@ public class Parser extends Scanner {
 		T get() throws IOException;
 	}
 
+	static interface Function<T, R> {
+		R get(T t) throws IOException;
+	}
+
 	public <T> T parens(Action<T> action) throws IOException {
 		expect(LPAREN);
 		T result = action.get();
@@ -71,6 +75,32 @@ public class Parser extends Scanner {
 		}
 
 		return result;
+	}
+
+	public <T> T maybeParametricWithImplicitLParen(Function<List<String>, T> action) throws IOException {
+		if (check(LPAREN)) {
+			Token token = peek();
+
+			switch(token) {
+				case Identifier identifier:
+					if(identifier.name().equals("par")) {
+						next();
+
+						List<String> params = parens(() -> params());
+						expect(LPAREN);
+						T result = action.get(params);
+						expect(RPAREN);
+						return result;
+					}
+
+				default:
+					List<String> params = List.of();
+					return action.get(params);
+			}
+		} else {
+			List<String> params = List.of();
+			return action.get(params);
+		}
 	}
 
 	public <Term, Type, Datatype, Command> List<Command> script(Commands<Term, Type, Datatype, Command> factory)
@@ -282,29 +312,38 @@ public class Parser extends Scanner {
 
 			case "declare-fun": {
 				String function = identifier();
-				// TODO: add syntax for parameters
-				List<String> params = List.of();
-				Types<Type> context = factory.types(params);
-				List<Type> arguments = parens(() -> types(context));
-				Type result = type(context);
-				expect(RPAREN);
 
-				return factory.declareFun(function, params, arguments, result);
+				return maybeParametricWithImplicitLParen((params) -> {
+					Types<Type> context = factory.types(params);
+
+					// Note: LPAREN is already consumed by the (par check
+					List<Type> arguments = types(context);
+					expect(RPAREN);
+
+					Type result = type(context);
+					expect(RPAREN);
+
+					return factory.declareFun(function, params, arguments, result);
+				});
 			}
 
 			case "define-fun": {
 				String function = identifier();
-				// TODO: add syntax for parameters
-				List<String> params = List.of();
-				Types<Type> context = factory.types(params);
-				List<Pair<String, Type>> arguments = parens(() -> formals(context));
-				Type result = type(context);
-				Terms<Term, Type> scope = factory.terms(arguments);
-				Term body = term(context, scope);
-				expect(RPAREN);
+				return maybeParametricWithImplicitLParen((params) -> {
+					Types<Type> context = factory.types(params);
 
-				// TODO: support recursion?
-				return factory.defineFun(function, params, arguments, result, body);
+					// Note: LPAREN is already consumed by the (par check
+					List<Pair<String, Type>> arguments = formals(context);
+					expect(RPAREN);
+
+					Type result = type(context);
+					Terms<Term, Type> scope = factory.terms(arguments);
+					Term body = term(context, scope);
+					expect(RPAREN);
+
+					// TODO: support recursion?
+					return factory.defineFun(function, params, arguments, result, body);
+				});
 			}
 
 			case "declare-datatypes": {
