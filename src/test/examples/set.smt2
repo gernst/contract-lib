@@ -1,6 +1,3 @@
-; This file documents the required types and function symbols for Contract-LIB.
-; It is very much inspired by what CVC5 offers.
-
 (declare-sort Set 1)
 
 (declare-fun set.empty
