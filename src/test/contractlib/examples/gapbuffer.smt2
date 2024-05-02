@@ -48,3 +48,9 @@
            (= (GapBuffer.content  this)
               (seq.++    (old (seq.extract (GapBuffer.content this) 0 (- (GapBuffer.position this) 1)))
                          (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.length (GapBuffer.content this))))))))))
+
+(declare-proc GapBuffer.view
+    ((this (in GapBuffer)) (content (out (Seq Char))))
+    ((true
+      (= content
+         (GapBuffer.content  this)))))
