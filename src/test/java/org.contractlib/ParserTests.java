@@ -15,27 +15,40 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ParserTests {
 	@Test
-	void canScanAll() throws IOException {
-		File path = new File("src/test/examples");
+	void builtin() throws IOException {
+		canParseAll(new File("src/test/contractlib/builtin"));
+	}
+
+	@Test
+	void examples() throws IOException {
+		canParseAll(new File("src/test/contractlib/examples"));
+	}
+
+	@Test
+	void regression() throws IOException {
+		canParseAll(new File("src/test/contractlib/regression"));
+	}
+
+	void canParseAll(File path) throws IOException {
 		File[] files = path.listFiles();
 
 		for (File file : files) {
 			if (file.getName().endsWith(".smt2")) {
-				// canScan(file);
+				canScan(file);
 				canParse(file);
 			}
 		}
 	}
 
 	void canScan(File file) throws IOException {
-		System.out.println("Scanning: " + file.getAbsolutePath());
+		System.out.println("Scanning: " + file.getPath());
 		Reader reader = new FileReader(file);
 		Parser parser = new Parser(reader);
 		parser.sexprs();
 	}
 
 	void canParse(File file) throws IOException {
-		System.out.println("Parsing: " + file.getAbsolutePath());
+		System.out.println("Parsing:  " + file.getPath());
 		Reader reader = new FileReader(file);
 		Parser parser = new Parser(reader);
 		Factory ast = new Factory();
