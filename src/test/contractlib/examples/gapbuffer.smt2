@@ -2,9 +2,49 @@
 
 (declare-datatypes
   ((GapBuffer 0))
-   (((GapBuffer (position Int)
-                (content (Seq Char))))))
+   (((GapBuffer (GapBuffer.position Int)
+                (GapBuffer.content (Seq Char))))))
 
 (declare-proc GapBuffer.init
-    ()
-    ())
+    ((this (out GapBuffer)))
+    ((true
+      (and (= (GapBuffer.position this) 0))
+           (= (GapBuffer.content  this) seq.empty))))
+
+(declare-proc GapBuffer.left
+    ((this (inout GapBuffer)))
+    (((< 0 (GapBuffer.position this))
+      (and (= (GapBuffer.position this)
+              (- (old (GapBuffer.position this)) 1))
+           (= (GapBuffer.content  this)
+              (old (GapBuffer.content this)))))))
+
+(declare-proc GapBuffer.left
+    ((this (inout GapBuffer)))
+    (((< (GapBuffer.position this)
+         (seq.length (GapBuffer.content this)))
+      (and (= (GapBuffer.position this)
+              (+ (old (GapBuffer.position this)) 1))
+           (= (GapBuffer.content  this)
+              (old (GapBuffer.content this)))))))
+
+(declare-proc GapBuffer.insert
+    ((this (inout GapBuffer)) (char (in Char)))
+    (((and (<= 0 (GapBuffer.position this))
+           (<= (GapBuffer.position this)
+              (seq.length (GapBuffer.content this))))
+      (and (= (GapBuffer.position this)
+              (+ (old (GapBuffer.position this)) 1))
+           (= (GapBuffer.content  this)
+              (seq.++    (old (seq.extract (GapBuffer.content this) 0 (GapBuffer.position this)))
+                 (seq.++ (seq.unit char)
+                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.length (GapBuffer.content this)))))))))))
+
+(declare-proc GapBuffer.delete
+    ((this (inout GapBuffer)))
+    (((< 0 (GapBuffer.position this))
+      (and (= (GapBuffer.position this)
+              (- (old (GapBuffer.position this)) 1))
+           (= (GapBuffer.content  this)
+              (seq.++    (old (seq.extract (GapBuffer.content this) 0 (- (GapBuffer.position this) 1)))
+                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.length (GapBuffer.content this))))))))))
