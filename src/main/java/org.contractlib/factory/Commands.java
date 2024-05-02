@@ -13,7 +13,7 @@ public interface Commands<Term, Type, Datatype, Command> {
 
 	Datatypes<Type, Datatype> datatypes(List<Pair<String, Integer>> arities);
 
-	Command declareDatatypes(List<Pair<String, Integer>> arities, List<Pair<String, Datatype>> datatypes);
+	Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes);
 
 	Terms<Term, Type> terms(List<Pair<String, Type>> variables);
 

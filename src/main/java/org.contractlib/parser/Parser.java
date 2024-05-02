@@ -121,11 +121,20 @@ public class Parser extends Scanner {
 		return repeat(() -> type(context));
 	}
 
+	public <Type> List<Pair<String, List<Pair<String, List<Type>>>>> constructors(Types<Type> context)
+			throws IOException {
+		return repeat(() -> constructor(context));
+	}
+
+	public <Type> List<Pair<String, List<Type>>> selectors(Types<Type> context) throws IOException {
+		return repeat(() -> selector(context));
+	}
+
 	public <Type> List<Pair<String, Type>> formals(Types<Type> context) throws IOException {
 		return repeat(() -> formal(context));
 	}
 
-	public <Type, Datatype> List<Pair<String, Datatype>> datatypes(Datatypes<Type, Datatype> data) throws IOException {
+	public <Type, Datatype> List<Datatype> datatypes(Datatypes<Type, Datatype> data) throws IOException {
 		return repeat(() -> datatype(data));
 	}
 
@@ -163,6 +172,30 @@ public class Parser extends Scanner {
 
         default:
             return null;
+		}
+	}
+
+	public <Type> Pair<String, List<Type>> selector(Types<Type> context) throws IOException {
+		if (check(LPAREN)) {
+			String name = identifier();
+			List<Type> types = types(context);
+			expect(RPAREN);
+
+			return new Pair(name, types);
+		} else {
+			return null;
+		}
+	}
+
+	public <Type> Pair<String, List<Pair<String, List<Type>>>> constructor(Types<Type> context) throws IOException {
+		if (check(LPAREN)) {
+			String name = identifier();
+			List<Pair<String, List<Type>>> selectors = selectors(context);
+			expect(RPAREN);
+
+			return new Pair(name, selectors);
+		} else {
+			return null;
 		}
 	}
 
@@ -219,22 +252,15 @@ public class Parser extends Scanner {
 		}
 	}
 
-	public <Type, Datatype> Pair<String, Datatype> datatype(Datatypes<Type, Datatype> data) throws IOException {
-		if (check(LPAREN)) {
-			Token token = peek();
+	public <Type, Datatype> Datatype datatype(Datatypes<Type, Datatype> data) throws IOException {
+		if (peek(LPAREN)) {
+			return maybeParametricWithImplicitLParen((params) -> {
+				Types<Type> context = data.types(params);
+				List<Pair<String, List<Pair<String, List<Type>>>>> constructors = constructors(context);
+				expect(RPAREN);
 
-			switch(token) {
-				case Identifier identifier:
-					if(!identifier.name().equals("par"))
-						unexpected(token);
-
-					throw new UnsupportedOperationException();
-
-				default:
-					List<String> params = List.of();
-					Types<Type> context = data.types(params);
-					throw new UnsupportedOperationException();
-			}
+				return data.datatype(params, constructors);
+			});
 		} else {
 			return null;
 		}
@@ -348,9 +374,9 @@ public class Parser extends Scanner {
 
 			case "declare-datatypes": {
 				List<Pair<String, Integer>> arities = parens(() -> arities());
-				Datatypes<Type, Datatype> context = factory.datatypes(arities);
+				Datatypes<Type, Datatype> data = factory.datatypes(arities);
 
-				List<Pair<String, Datatype>> datatypes = parens(() -> datatypes(context));
+				List<Datatype> datatypes = parens(() -> datatypes(data));
 
 				return factory.declareDatatypes(arities, datatypes);
 			}
@@ -506,6 +532,14 @@ public class Parser extends Scanner {
 	boolean check(Token token) throws IOException {
 		if (peek() == token) {
 			next();
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	boolean peek(Token token) throws IOException {
+		if (peek() == token) {
 			return true;
 		} else {
 			return false;

@@ -3,6 +3,21 @@
 (define-sort Stream (A)
   (Array Int A))
 
+(declare-datatypes
+  ((Unit 0))
+  (((unit))))
+
+(declare-datatypes
+  ((Color 0))
+  (((red) (green) (blue))))
+
+(declare-datatypes
+  ((List 1))
+  ((par (A)
+      ((nil)
+       (cons (head A)
+             (tail (Lst A)))))))
+
 (declare-fun choose (Int Int) Int)
 
 (assert

@@ -28,7 +28,7 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
 		return new Datatypes();
 	}
 
-	public Command declareDatatypes(List<Pair<String, Integer>> arities, List<Pair<String, Datatype>> datatypes) {
+	public Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes) {
 		return new Command.DeclareDatatypes(arities, datatypes);
 	}
 
@@ -61,9 +61,9 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
 			return empty.extend(params);
 		}
 
-		public Datatype datatype(String name, List<String> params,
+		public Datatype datatype(List<String> params,
 				List<Pair<String, List<Pair<String, List<Type>>>>> constrs) {
-			return new Datatype(name, params, constrs);
+			return new Datatype(params, constrs);
 		}
 	}
 

@@ -15,7 +15,7 @@ public sealed interface Command {
 	record DefineSort(String name, List<String> params, Type body) implements Command {
 	}
 
-	record DeclareDatatypes(List<Pair<String, Integer>> arities, List<Pair<String, Datatype>> datatypes)
+	record DeclareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes)
 			implements Command {
 	}
 
