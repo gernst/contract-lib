@@ -12,8 +12,8 @@ import org.contractlib.util.Pair;
 import org.contractlib.sexpr.*;
 import org.contractlib.factory.*;
 
-public class Parser extends Scanner {
-    public Parser(Reader reader) {
+public class HandwrittenParser extends Scanner {
+    public HandwrittenParser(Reader reader) {
         super(reader);
     }
 

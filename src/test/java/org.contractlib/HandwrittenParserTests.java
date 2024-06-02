@@ -7,16 +7,16 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import org.contractlib.parser.HandwrittenParser;
 import org.contractlib.sexpr.SExpr;
 import org.contractlib.ast.*;
-import org.contractlib.parser.Parser;
 import org.contractlib.printer.Printer;
 import org.contractlib.printer.SExprPrinter;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ParserTests {
+public class HandwrittenParserTests {
 	@Test
 	void builtin() throws IOException {
 		canParseAll(new File("src/test/contractlib/builtin"));
@@ -46,9 +46,9 @@ public class ParserTests {
 	void canScan(File file) throws IOException {
 		System.out.println("Scanning: " + file.getPath());
 		Reader reader = new FileReader(file);
-		Parser parser = new Parser(reader);
+		HandwrittenParser handwrittenParser = new HandwrittenParser(reader);
 
-		List<SExpr> result = parser.sexprs();
+		List<SExpr> result = handwrittenParser.sexprs();
 
 		Printer<SExpr> printer = new SExprPrinter();
 		for (SExpr expr : result) {
@@ -60,9 +60,9 @@ public class ParserTests {
 	void canParse(File file) throws IOException {
 		System.out.println("Parsing:  " + file.getPath());
 		Reader reader = new FileReader(file);
-		Parser parser = new Parser(reader);
+		HandwrittenParser handwrittenParser = new HandwrittenParser(reader);
 		Factory ast = new Factory();
 
-		List<Command> result = parser.script(ast);
+		List<Command> result = handwrittenParser.script(ast);
 	}
 }
