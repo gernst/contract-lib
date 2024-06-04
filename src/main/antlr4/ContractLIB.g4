@@ -86,6 +86,10 @@ CMD_DeclareConst
     : 'declare-const'
     ;
 
+CMD_DeclareAbstraction
+    : 'declare-abstraction'
+    ;
+
 CMD_DeclareAbstractions
     : 'declare-abstractions'
     ;
@@ -459,6 +463,10 @@ script
 cmd_assert
     : CMD_Assert term
     ;
+cmd_declareAbstraction
+    // cardinalitiees for sort_dec and datatype_dec have to be n+1
+    : CMD_DeclareAbstraction ParOpen sort_dec+ ParClose ParOpen datatype_dec+ ParClose
+    ;
 
 cmd_declareAbstractions
     // cardinalitiees for sort_dec and datatype_dec have to be n+1
@@ -509,7 +517,7 @@ cmd_defineSort
 
 command
     : ParOpen cmd_assert ParClose
-    | ParOpen cmd_declareAbstractions ParClose
+    | ParOpen cmd_declareAbstraction ParClose
     | ParOpen cmd_declareConst ParClose
     | ParOpen cmd_declareDatatype ParClose
     | ParOpen cmd_declareDatatypes ParClose

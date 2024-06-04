@@ -10,6 +10,13 @@
   <name>Contract-LIB</name>
   <url>http://contract-lib.org</url>
 
+  <repositories>
+    <repository>
+      <id>sonatype-snapshots</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>21</maven.compiler.source>
@@ -27,6 +34,11 @@
       <groupId>org.antlr</groupId>
       <artifactId>antlr4</artifactId>
       <version>4.13.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.github.jmltoolkit</groupId>
+      <artifactId>jmlparser-core</artifactId>
+      <version>3.25.10-b6-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
@@ -61,8 +73,8 @@
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>4.13.1</version>
         <configuration>
-          <!--<listener>true</listener>
-          <visitor>true</visitor>-->
+          <listener>true</listener>
+          <visitor>true</visitor>
           <outputDirectory>${project.build.directory}/generated-sources/antlr4/org/contractlib/antlr4parser</outputDirectory>
           <arguments>
             <argument>-package</argument>

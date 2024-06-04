@@ -14,7 +14,6 @@ import org.contractlib.printer.Printer;
 import org.contractlib.printer.SExprPrinter;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class HandwrittenParserTests {
 	@Test
