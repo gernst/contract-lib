@@ -3,25 +3,26 @@ interface BankAccount {
 
     /*@ normal_behavior
       @  requires true;
-      @  ensures this.balance == 0;
+      @  ensures (=(balancethis)0);
       @*/
     BankAccount init();
 
     /*@ normal_behavior
       @  requires true;
-      @  ensures \result == this.balance;
+      @  ensures (=result(balancethis));
       @*/
-    int balance();
+    int balance(BankAccount this);
 
     /*@ normal_behavior
       @  requires true;
-      @  ensures this.balance == \old(this.balance) + amount;
+      @  ensures (=(balancethis)(+(old(balancethis))amount));
       @*/
-    void deposit(int amount);
+    BankAccount deposit(BankAccount this, int amount);
 
     /*@ normal_behavior
-      @  requires amount <= this.balance;
-      @  ensures this.balance == \old(this.balance) - amount;
+      @  requires (<=amount(balancethis));
+      @  ensures (=(balancethis)(-(old(balancethis))amount));
       @*/
-    void withdraw(int amount);
+    BankAccount withdraw(BankAccount this, int amount);
+
 }

@@ -39,7 +39,7 @@ public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
     }
 
     public static void main(String[] args) throws IOException {
-        Path path = Paths.get("src/test/contractlib/examples/bankaccount.smt2");
+        Path path = Paths.get("src/test/contractlib/examples/examples.smt2");
         System.out.println("Parsing:  " + path);
 
         CharStream charStream = CharStreams.fromPath(path);
@@ -61,28 +61,6 @@ public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitCmd_declareAbstraction(ContractLIBParser.Cmd_declareAbstractionContext ctx) {
-        if (!interfaceName.isBlank())
-            throw new RuntimeException("At the moment, only a single declaration of an abstraction is supported!");
-
-        interfaceName = ctx.sort_dec(0).symbol().getText();
-        System.out.println("Found declaration of " + interfaceName);
-
-        String ghostDeclTemplate = "//@ ghost %s %s;";
-
-        for (var d : ctx.datatype_dec()) {
-
-            String sort = convertSort(d.constructor_dec(0).selector_dec(0).sort().getText());
-            String name = d.constructor_dec(0).selector_dec(0).symbol().getText();
-            System.out.println("Found declaration of ghost field " + name);
-            ghostFields.add(String.format(ghostDeclTemplate, sort, name).indent(4));
-        }
-
-        return null;
-
-    }
-
-    @Override
     public Void visitCmd_defineContract(ContractLIBParser.Cmd_defineContractContext ctx) {
 
         if (interfaceName.isBlank())
@@ -100,8 +78,8 @@ public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
         String returnSort = "";
 
         String params = ""; //ctx.formal_param().stream().map(RuleContext::getText).collect(Collectors.joining());
-        for (var param : ctx.formal_param()) {
-            var paramMode = param.param_mode().getText();
+        for (var param : ctx.formal()) {
+            var paramMode = param.argument_mode().getText();
             var paramName = param.symbol().getText();
             var paramSort = convertSort(param.sort().getText());
             if (paramMode.equals("in")) {

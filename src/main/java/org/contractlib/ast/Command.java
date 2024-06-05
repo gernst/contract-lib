@@ -9,6 +9,9 @@ public sealed interface Command {
     record Assert(Term formula) implements Command {
     }
 
+    record DeclareAbstractions(List<Pair<String, Integer>> arities, List<Abstraction> abstractions) implements Command {
+    }
+
     record DeclareSort(String name, Integer arity) implements Command {
     }
 
@@ -25,7 +28,7 @@ public sealed interface Command {
             implements Command {
     }
 
-    record DeclareProc(String name, List<String> params, List<Pair<String, Pair<Mode, Type>>> arguments,
-            List<Pair<Term, Term>> contracts) implements Command {
+    record DefineContract(String name, List<Pair<String, Pair<Mode, Type>>> formal,
+                          List<Pair<Term, Term>> contracts) implements Command {
     }
 }

@@ -1,12 +1,11 @@
 package org.contractlib.ast;
 
+import org.contractlib.factory.Abstractions;
 import org.contractlib.util.Pair;
 import org.contractlib.factory.Mode;
 
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -28,6 +27,17 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
         return new Datatypes();
     }
 
+    @Override
+    public Abstractions abstractions(List<Pair<String, Integer>> arities) {
+        return new Abstractions();
+    }
+
+    @Override
+    public Command declareAbstractions(List<Pair<String, Integer>> arities,
+                                       List<Abstraction> abstractions) {
+        return new Command.DeclareAbstractions(arities, abstractions);
+    }
+
     public Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes) {
         return new Command.DeclareDatatypes(arities, datatypes);
     }
@@ -46,9 +56,9 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
         return new Command.DefineFun(name, params, arguments, result, body);
     }
 
-    public Command declareProc(String name, List<String> params, List<Pair<String, Pair<Mode, Type>>> arguments,
-            List<Pair<Term, Term>> contracts) {
-        return new Command.DeclareProc(name, params, arguments, contracts);
+    public Command defineContract(String name, List<Pair<String, Pair<Mode, Type>>> formal,
+                                  List<Pair<Term, Term>> contracts) {
+        return new Command.DefineContract(name, formal, contracts);
     }
 
     public Command assertion(Term term) {
@@ -63,6 +73,19 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Dat
 
         public Datatype datatype(List<String> params, List<Pair<String, List<Pair<String, List<Type>>>>> constrs) {
             return new Datatype(params, constrs);
+        }
+    }
+
+    class Abstractions implements org.contractlib.factory.Abstractions<Type, Abstraction> {
+        public Types types(List<String> params) {
+            Types empty = new Types(Map.of());
+            return empty.extend(params);
+        }
+
+        @Override
+        public Abstraction abstraction(List<String> params,
+                                       List<Pair<String, List<Pair<String, List<Type>>>>> constructors) {
+            return new Abstraction(params, constructors);
         }
     }
 

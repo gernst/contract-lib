@@ -1,7 +1,5 @@
 package org.contractlib.factory;
 
-import org.contractlib.util.Pair;
-
 import java.util.List;
 
 public interface Types<Type> {

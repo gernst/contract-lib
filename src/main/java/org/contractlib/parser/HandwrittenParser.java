@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Stack;
 import java.util.ArrayList;
 
+import org.contractlib.ast.Abstraction;
 import org.contractlib.util.Pair;
 
 import org.contractlib.sexpr.*;
@@ -138,6 +139,10 @@ public class HandwrittenParser extends Scanner {
         return repeat(() -> datatype(data));
     }
 
+    public <Type, Abstraction> List<Abstraction> abstractions(Abstractions<Type, Abstraction> data) throws IOException {
+        return repeat(() -> abstraction(data));
+    }
+
     public <Type> List<Pair<String, Pair<Mode, Type>>> formalsWithMode(Types<Type> context) throws IOException {
         return repeat(() -> formalWithMode(context));
     }
@@ -266,6 +271,20 @@ public class HandwrittenParser extends Scanner {
         }
     }
 
+    public <Type, Abstraction> Abstraction abstraction(Abstractions<Type, Abstraction> data) throws IOException {
+        if (peek(LPAREN)) {
+            return maybeParametricWithImplicitLParen((params) -> {
+                Types<Type> context = data.types(params);
+                List<Pair<String, List<Pair<String, List<Type>>>>> constructors = constructors(context);
+                expect(RPAREN);
+
+                return data.abstraction(params, constructors);
+            });
+        } else {
+            return null;
+        }
+    }
+
     public Mode mode() throws IOException {
         String id = identifier();
 
@@ -381,7 +400,16 @@ public class HandwrittenParser extends Scanner {
                 return factory.declareDatatypes(arities, datatypes);
             }
 
-            case "declare-proc": {
+            case "declare-abstractions": {
+                List<Pair<String, Integer>> arities = parens(() -> arities());
+                Abstractions<Type, Abstraction> data = factory.abstractions(arities);
+
+                List<Abstraction> abstractions = parens(() -> abstractions(data));
+
+                return factory.declareAbstractions(arities, abstractions);
+            }
+
+            case "define-contract": {
                 String procedure = identifier();
                 List<String> params = List.of();
                 Types<Type> context = factory.types(params);
@@ -396,7 +424,7 @@ public class HandwrittenParser extends Scanner {
                 List<Pair<Term, Term>> contracts = parens(() -> contracts(context, scope));
                 expect(RPAREN);
 
-                return factory.declareProc(procedure, params, arguments, contracts);
+                return factory.defineContract(procedure, arguments, contracts);
 
             }
 

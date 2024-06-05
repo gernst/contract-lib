@@ -1,5 +1,6 @@
 package org.contractlib.factory;
 
+import org.contractlib.ast.Abstraction;
 import org.contractlib.util.Pair;
 
 import java.util.List;
@@ -11,7 +12,11 @@ public interface Commands<Term, Type, Datatype, Command> {
 
     Command defineSort(String name, List<String> params, Type body);
 
+    Command declareAbstractions(List<Pair<String, Integer>> arities, List<Abstraction> abstractions);
+
     Datatypes<Type, Datatype> datatypes(List<Pair<String, Integer>> arities);
+
+    Abstractions<Type, Abstraction> abstractions(List<Pair<String, Integer>> arities);
 
     Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes);
 
@@ -21,8 +26,8 @@ public interface Commands<Term, Type, Datatype, Command> {
 
     Command defineFun(String name, List<String> params, List<Pair<String, Type>> arguments, Type result, Term body);
 
-    Command declareProc(String name, List<String> params, List<Pair<String, Pair<Mode, Type>>> arguments,
-            List<Pair<Term, Term>> contracts);
+    Command defineContract(String name, List<Pair<String, Pair<Mode, Type>>> arguments,
+                           List<Pair<Term, Term>> contracts);
 
     Command assertion(Term term);
 }
