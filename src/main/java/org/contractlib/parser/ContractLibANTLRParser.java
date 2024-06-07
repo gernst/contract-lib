@@ -15,6 +15,7 @@ import java.util.List;
 public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends ContractLIBBaseVisitor<Void> {
 
     private final Commands<TERM, TYPE, ABS, DT, COMMAND> factory;
+
     private final List<COMMAND> commands = new ArrayList<>();
 
     public ContractLibANTLRParser(Commands<TERM, TYPE, ABS, DT, COMMAND> factory) {
@@ -51,7 +52,6 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
         commands.add(factory.declareAbstractions(arities, abstractions));
 
         return null;
-
     }
 
     private @NotNull ABS convertAbstraction(ContractLIBParser.Datatype_decContext ctx,
@@ -102,6 +102,44 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
         } else {
             return ctx.simpleSymbol().getText();
         }
+    }
+
+    @Override
+    public Void visitCmd_declareDatatypes(ContractLIBParser.Cmd_declareDatatypesContext ctx) {
+        List<Pair<String, Integer>> arities = new ArrayList<>();
+        for (var a : ctx.sort_dec()) {
+            String name = convertSymbol(a.symbol());
+            Integer arity = Integer.parseInt(a.numeral().Numeral().getText());
+            arities.add(new Pair<>(name, arity));
+        }
+
+        List<String> params = new ArrayList<>();
+        for (var p : ctx.sort_dec()) {
+            params.add(convertSymbol(p.symbol()));
+        }
+        Types<TYPE> context = factory.types(params);
+
+        List<DT> datatypes = new ArrayList<>();
+        for (var d : ctx.datatype_dec()) {
+            DT dt = convertDatatype(d, params, context, arities);
+            datatypes.add(dt);
+        }
+        commands.add(factory.declareDatatypes(arities, datatypes));
+
+        return null;
+    }
+
+    private @NotNull DT convertDatatype(ContractLIBParser.Datatype_decContext ctx,
+                                        List<String> params,
+                                        Types<TYPE> context,
+                                        List<Pair<String, Integer>> arities) {
+        List<Pair<String, List<Pair<String, List<TYPE>>>>> constrs = new ArrayList<>();
+        for (var ctr : ctx.constructor_dec()) {
+            constrs.add(convertConstructor(ctr, context));
+        }
+
+        Datatypes<TYPE, DT> dts = factory.datatypes(arities);
+        return dts.datatype(params, constrs);
     }
 
     @Override
