@@ -6,9 +6,9 @@ This repository provides a tool-chain for Contract-LIB. It contains:
   as well as `assert` from SMT-LIB, and additionally the new commands `declare-abstractions` and `define-contract`.
 * Interfaces of factories to create the abstract syntax tree (AST) nodes for Contract-LIB (found in the package
   `org.contractlib.factory`).
-* A parser based on the ANTLR grammar which has to be instantiated with the concrete factories and which produces the
+* A parser `org.contractlib.parser.ContractLibANTLRParser` based on the ANTLR grammar which has to be instantiated with the concrete factories and which produces the
   AST.
-* Basic default implementations of these interfaces, which support tasks such as type resolution.
+* Basic default implementations of these interfaces in the package `org.contractlib.ast`, which support tasks such as type resolution.
 
 The idea is that for tool developers who want to import Contract-LIB into their tools, the following steps have to be
 done: First, they need to implement the factory interfaces. This gives the freedom to only implement what is of interest

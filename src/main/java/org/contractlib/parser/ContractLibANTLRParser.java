@@ -5,7 +5,6 @@ import org.contractlib.antlr4parser.ContractLIBParser;
 import org.contractlib.factory.Mode;
 import org.contractlib.factory.Types;
 import org.contractlib.util.Pair;
-import org.jetbrains.annotations.NotNull;
 
 import org.contractlib.factory.*;
 
@@ -82,7 +81,7 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, FUNDECL, COMMAND> exten
         return null;
     }
 
-    private @NotNull ABS convertAbstraction(ContractLIBParser.Datatype_decContext ctx,
+    private ABS convertAbstraction(ContractLIBParser.Datatype_decContext ctx,
                                             List<String> params,
                                             Types<TYPE> context,
                                             List<Pair<String, Integer>> arities) {
@@ -303,7 +302,7 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, FUNDECL, COMMAND> exten
         return null;
     }
 
-    private @NotNull DT convertDatatype(ContractLIBParser.Datatype_decContext ctx,
+    private DT convertDatatype(ContractLIBParser.Datatype_decContext ctx,
                                         List<String> params,
                                         Types<TYPE> context,
                                         List<Pair<String, Integer>> arities) {
