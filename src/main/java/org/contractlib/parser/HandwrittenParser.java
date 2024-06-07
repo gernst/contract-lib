@@ -104,7 +104,7 @@ public class HandwrittenParser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> List<Command> script(Commands<Term, Type, Datatype, Command> factory)
+    public <Term, Type, Datatype, Command> List<Command> script(Commands<Term, Type, Abstraction, Datatype, Command> factory)
             throws IOException {
         return repeat(() -> command(factory));
     }
@@ -320,7 +320,7 @@ public class HandwrittenParser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> Command command(Commands<Term, Type, Datatype, Command> factory)
+    public <Term, Type, Datatype, Command> Command command(Commands<Term, Type, Abstraction, Datatype, Command> factory)
             throws IOException {
         if (check(LPAREN)) {
             String command = identifier();

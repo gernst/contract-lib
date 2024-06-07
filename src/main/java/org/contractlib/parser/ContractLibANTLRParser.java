@@ -2,7 +2,6 @@ package org.contractlib.parser;
 
 import org.contractlib.antlr4parser.ContractLIBBaseVisitor;
 import org.contractlib.antlr4parser.ContractLIBParser;
-import org.contractlib.ast.*;
 import org.contractlib.factory.Mode;
 import org.contractlib.factory.Types;
 import org.contractlib.util.Pair;
@@ -13,12 +12,16 @@ import org.contractlib.factory.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
+public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends ContractLIBBaseVisitor<Void> {
 
-    private final Commands<Term, Type, Datatype, Command> factory = new Factory();
-    private final List<Command> commands = new ArrayList<>();
+    private final Commands<TERM, TYPE, ABS, DT, COMMAND> factory;
+    private final List<COMMAND> commands = new ArrayList<>();
 
-    public List<Command> getCommands() {
+    public ContractLibANTLRParser(Commands<TERM, TYPE, ABS, DT, COMMAND> factory) {
+        this.factory = factory;
+    }
+
+    public List<COMMAND> getCommands() {
         return commands;
     }
 
@@ -37,11 +40,11 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
             params.add(convertSymbol(p.symbol()));
             //System.out.println("Found datatype declaration: " + p.getText());
         }
-        Types<Type> context = factory.types(params);
+        Types<TYPE> context = factory.types(params);
 
-        List<Abstraction> abstractions = new ArrayList<>();
+        List<ABS> abstractions = new ArrayList<>();
         for (var d : ctx.datatype_dec()) {
-            Abstraction abstr = convertAbstraction(d, params, context);
+            ABS abstr = convertAbstraction(d, params, context, arities);
             abstractions.add(abstr);
             //System.out.println("Found declaration of abstraction " + abstr);
         }
@@ -51,42 +54,44 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
 
     }
 
-    private @NotNull Abstraction convertAbstraction(ContractLIBParser.Datatype_decContext ctx,
-                                                    List<String> params,
-                                                    Types<Type> context) {
-        List<Pair<String, List<Pair<String, List<Type>>>>> constrs = new ArrayList<>();
+    private @NotNull ABS convertAbstraction(ContractLIBParser.Datatype_decContext ctx,
+                                            List<String> params,
+                                            Types<TYPE> context,
+                                            List<Pair<String, Integer>> arities) {
+        List<Pair<String, List<Pair<String, List<TYPE>>>>> constrs = new ArrayList<>();
         for (var ctr : ctx.constructor_dec()) {
             constrs.add(convertConstructor(ctr, context));
         }
-        return new Abstraction(params, constrs);
+        Abstractions<TYPE, ABS> abs = factory.abstractions(arities);
+        return abs.abstraction(params, constrs);
     }
 
-    private Pair<String, List<Pair<String, List<Type>>>> convertConstructor(ContractLIBParser.Constructor_decContext constr,
-                                                                            Types<Type> params) {
+    private Pair<String, List<Pair<String, List<TYPE>>>> convertConstructor(ContractLIBParser.Constructor_decContext constr,
+                                                                            Types<TYPE> params) {
         String ctrName = convertSymbol(constr.symbol());
-        List<Pair<String, List<Type>>> selectors = new ArrayList<>();
+        List<Pair<String, List<TYPE>>> selectors = new ArrayList<>();
         for (var selector : constr.selector_dec()) {
             String name = convertSymbol(selector.symbol());
-            Type t = convertSort(selector.sort(), params);
+            TYPE t = convertSort(selector.sort(), params);
 
-            Pair<String, List<Type>> sel = new Pair<>(name, List.of(t));
+            Pair<String, List<TYPE>> sel = new Pair<>(name, List.of(t));
             selectors.add(sel);
         }
         return new Pair<>(ctrName, selectors);
     }
 
-    private <Type> Type convertSort(ContractLIBParser.SortContext sort, Types<Type> params) {
+    private TYPE convertSort(ContractLIBParser.SortContext sort, Types<TYPE> params) {
         String identifier = sort.identifier().getText();
 
         // TODO: repair parametric sorts
-        /*List<Type> args = new ArrayList<>();
+        /*List<TYPE> args = new ArrayList<>();
         if (sort.sort() != null) {
             // parametric sort
             for (var arg : sort.sort()) {
                 args.add(convertSort(arg, params));
             }
         }
-        return new Type.Sort(identifier, args);*/
+        return new TYPE.Sort(identifier, args);*/
         return params.identifier(identifier);
     }
 
@@ -105,16 +110,16 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
         String name = convertSymbol(ctx.symbol());
         //System.out.println("Found contract for " + name);
 
-        List<Pair<String, Pair<Mode, Type>>> formalWithMode = new ArrayList<>();
+        List<Pair<String, Pair<Mode, TYPE>>> formalWithMode = new ArrayList<>();
 
-        Types<Type> context = factory.types(List.of());
+        Types<TYPE> context = factory.types(List.of());
         for (var f : ctx.formal()) {
             formalWithMode.add(convertFormal(f, context));
         }
-        List<Pair<String, Type>> formal = formalWithMode.stream()
+        List<Pair<String, TYPE>> formal = formalWithMode.stream()
             .map(x -> new Pair<>(x.first(), x.second().second())).toList();
 
-        List<Pair<Term, Term>> contracts = new ArrayList<>();
+        List<Pair<TERM, TERM>> contracts = new ArrayList<>();
         for (var c : ctx.contract()) {
             contracts.add(convertContract(c, context, formal));
         }
@@ -123,33 +128,33 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
         return null;
     }
 
-    private Pair<Term, Term> convertContract(ContractLIBParser.ContractContext ctx,
-                                             Types<Type> context,
-                                             List<Pair<String, Type>> vars) {
-        Terms<Term, Type> scope = factory.terms(vars);
-        Term pre = convertTerm(ctx.term(0), scope, context);
-        Term post = convertTerm(ctx.term(1), scope, context);
+    private Pair<TERM, TERM> convertContract(ContractLIBParser.ContractContext ctx,
+                                             Types<TYPE> context,
+                                             List<Pair<String, TYPE>> vars) {
+        Terms<TERM, TYPE> scope = factory.terms(vars);
+        TERM pre = convertTerm(ctx.term(0), scope, context);
+        TERM post = convertTerm(ctx.term(1), scope, context);
 
         return new Pair<>(pre, post);
     }
 
-    private <Term, Type> Term convertTerm(ContractLIBParser.TermContext ctx,
-                             Terms<Term, Type> scope,
-                             Types<Type> vars) {
+    private TERM convertTerm(ContractLIBParser.TermContext ctx,
+                             Terms<TERM, TYPE> scope,
+                             Types<TYPE> vars) {
         if (ctx.GRW_Exists() != null) {
-            List<Pair<String, Type>> boundVars = new ArrayList<>();
+            List<Pair<String, TYPE>> boundVars = new ArrayList<>();
             for (ContractLIBParser.Sorted_varContext bv : ctx.sorted_var()) {
                 boundVars.add(convertSortedVar(bv, vars));
             }
-            Terms<Term, Type> ext = scope.extended(boundVars);
+            Terms<TERM, TYPE> ext = scope.extended(boundVars);
             return scope.binder("exists", boundVars, convertTerm(ctx.term(0), ext, vars));
 
         } else if (ctx.GRW_Forall() != null) {
-            List<Pair<String, Type>> boundVars = new ArrayList<>();
+            List<Pair<String, TYPE>> boundVars = new ArrayList<>();
             for (ContractLIBParser.Sorted_varContext bv : ctx.sorted_var()) {
                 boundVars.add(convertSortedVar(bv, vars));
             }
-            Terms<Term, Type> ext = scope.extended(boundVars);
+            Terms<TERM, TYPE> ext = scope.extended(boundVars);
             return scope.binder("forall", boundVars, convertTerm(ctx.term(0), ext, vars));
 
         } else if (ctx.GRW_Old() != null) {
@@ -160,7 +165,7 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
 
         } else if (ctx.qual_identifer() != null && ctx.term() != null) {
             String ident = ctx.qual_identifer().getText();
-            List<Term> args = new ArrayList<>();
+            List<TERM> args = new ArrayList<>();
             for (var t : ctx.term()) {
                 args.add(convertTerm(t, scope, vars));
             }
@@ -179,18 +184,18 @@ public class ContractLibANTLRParser extends ContractLIBBaseVisitor<Void> {
         return null;
     }
 
-    private <Type> Pair<String, Type> convertSortedVar(ContractLIBParser.Sorted_varContext ctx,
-                                                Types<Type> context) {
+    private Pair<String, TYPE> convertSortedVar(ContractLIBParser.Sorted_varContext ctx,
+                                                Types<TYPE> context) {
         String name = convertSymbol(ctx.symbol());
-        Type type = convertSort(ctx.sort(), context);
+        TYPE type = convertSort(ctx.sort(), context);
         return new Pair<>(name, type);
     }
 
-    private Pair<String, Pair<Mode, Type>> convertFormal(ContractLIBParser.FormalContext ctx,
-                                                         Types<Type> context) {
+    private Pair<String, Pair<Mode, TYPE>> convertFormal(ContractLIBParser.FormalContext ctx,
+                                                         Types<TYPE> context) {
         String name = convertSymbol(ctx.symbol());
         Mode mode = convertMode(ctx.argument_mode());
-        Type type = convertSort(ctx.sort(), context);
+        TYPE type = convertSort(ctx.sort(), context);
         return new Pair<>(name, new Pair<>(mode, type));
     }
 

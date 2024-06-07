@@ -1,11 +1,10 @@
 package org.contractlib.factory;
 
-import org.contractlib.ast.Abstraction;
 import org.contractlib.util.Pair;
 
 import java.util.List;
 
-public interface Commands<Term, Type, Datatype, Command> {
+public interface Commands<Term, Type, Abstraction, Datatype, Command> {
     Types<Type> types(List<String> params);
 
     Command declareSort(String name, Integer arity);

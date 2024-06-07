@@ -1,6 +1,5 @@
 package org.contractlib.ast;
 
-import org.contractlib.factory.Abstractions;
 import org.contractlib.util.Pair;
 import org.contractlib.factory.Mode;
 
@@ -9,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-public class Factory implements org.contractlib.factory.Commands<Term, Type, Datatype, Command> {
+public class Factory implements org.contractlib.factory.Commands<Term, Type, Abstraction, Datatype, Command> {
     public Types types(List<String> params) {
         Types empty = new Types(Map.of());
         return empty.extend(params);

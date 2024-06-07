@@ -58,6 +58,15 @@
              (insert (head (Tree Y)) (tail (TreeList Y)))))))
 
 ; either the grammar is wrong or this example
+;(declare-abstractions
+;  ((Cache 0))
+;  (((Cache
+;     ((entries (Map Key Entry))
+;      (uniques (Set Int)))
+;  )))
+;)
+
+; corrected version?
 (declare-abstractions
   ((Cache 0))
   (((Cache

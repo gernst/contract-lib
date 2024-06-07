@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.contractlib.antlr4parser.ContractLIBLexer;
 import org.contractlib.antlr4parser.ContractLIBParser;
-import org.contractlib.ast.Factory;
+import org.contractlib.ast.*;
 import org.contractlib.parser.ContractLibANTLRParser;
 import org.contractlib.parser.HandwrittenParser;
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +20,31 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 class AntlrParserTests {
+
+    @Test
+    void testExamples() throws IOException {
+        Path path = Paths.get("src/test/contractlib/examples/examples.smt2");
+        System.out.println("Parsing:  " + path);
+
+        // ANTLR parser
+        CharStream charStream = CharStreams.fromPath(path);
+        ContractLIBLexer lexer = new ContractLIBLexer(charStream);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        ContractLIBParser parser = new ContractLIBParser(tokens);
+
+        ContractLIBParser.ScriptContext ctx = parser.script();
+        Factory factory = new Factory();
+        ContractLibANTLRParser<Term, Type, Abstraction, Datatype, Command> converter = new ContractLibANTLRParser<>(factory);
+        converter.visit(ctx);
+
+        StringBuilder sb = new StringBuilder();
+        for (var command : converter.getCommands()) {
+            sb.append(command.toString());
+            sb.append(System.lineSeparator());
+            sb.append(System.lineSeparator());
+        }
+        System.out.println(sb);
+    }
 
     // Test that handwritten parser and ANTLR parser produce the same results.
     // TODO: This test does not succeed at the moment, output differs at least for
@@ -36,7 +61,8 @@ class AntlrParserTests {
         ContractLIBParser parser = new ContractLIBParser(tokens);
 
         ContractLIBParser.ScriptContext ctx = parser.script();
-        ContractLibANTLRParser converter = new ContractLibANTLRParser();
+        Factory factory = new Factory();
+        ContractLibANTLRParser<Term, Type, Abstraction, Datatype, Command> converter = new ContractLibANTLRParser<>(factory);
         converter.visit(ctx);
 
         StringBuilder sb = new StringBuilder();

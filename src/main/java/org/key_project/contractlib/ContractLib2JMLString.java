@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
+public class ContractLib2JMLString extends ContractLIBBaseVisitor<Void> {
     final CharStream input;
     String interfaceName = "";
     String template = """
@@ -34,7 +34,7 @@ public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
         "Int", "int",
         "Bool", "boolean");
 
-    public ContractLib2JML(CharStream input) {
+    public ContractLib2JMLString(CharStream input) {
         this.input = input;
     }
 
@@ -48,7 +48,7 @@ public class ContractLib2JML extends ContractLIBBaseVisitor<Void> {
         ContractLIBParser parser = new ContractLIBParser(tokens);
 
         ContractLIBParser.ScriptContext ctx = parser.script();
-        ContractLib2JML converter = new ContractLib2JML(charStream);
+        ContractLib2JMLString converter = new ContractLib2JMLString(charStream);
         converter.visit(ctx);
         String test = converter.template;
 
