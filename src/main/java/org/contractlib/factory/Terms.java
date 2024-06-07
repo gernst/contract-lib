@@ -4,16 +4,21 @@ import org.contractlib.util.Pair;
 
 import java.util.List;
 
-public interface Terms<Term, Type> {
-    Term literal(Object value);
+/**
+ * An abstract factory for creating terms.
+ * @param <TERM>
+ * @param <TYPE>
+ */
+public interface Terms<TERM, TYPE> {
+    TERM literal(Object value);
 
-    Term identifier(String name);
+    TERM identifier(String name);
 
-    Term old(Term argument);
+    TERM old(TERM argument);
 
-    Term application(String function, List<Term> arguments);
+    TERM application(String function, List<TERM> arguments);
 
-    Term binder(String binder, List<Pair<String, Type>> formals, Term body);
+    TERM binder(String binder, List<Pair<String, TYPE>> formals, TERM body);
 
-    Terms<Term, Type> extended(List<Pair<String, Type>> formals);
+    Terms<TERM, TYPE> extended(List<Pair<String, TYPE>> formals);
 }

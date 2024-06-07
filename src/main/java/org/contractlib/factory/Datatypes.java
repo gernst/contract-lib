@@ -4,8 +4,8 @@ import org.contractlib.util.Pair;
 
 import java.util.List;
 
-public interface Datatypes<Type, Datatype> {
-    Types<Type> types(List<String> params);
+public interface Datatypes<TYPE, DATATYPE> {
+    Types<TYPE> types(List<String> params);
 
-    Datatype datatype(List<String> params, List<Pair<String, List<Pair<String, List<Type>>>>> constructors);
+    DATATYPE datatype(List<String> params, List<Pair<String, List<Pair<String, List<TYPE>>>>> constructors);
 }

@@ -4,8 +4,10 @@ import org.contractlib.util.Pair;
 
 import java.util.List;
 
-public record Datatype(
+public record FunDec(
+    String name,
     List<String> params,
-    List<Pair<String, List<Pair<String, List<Type>>>>> constrs
+    List<Pair<String, Type>> arguments,
+    Type result
 ) {
 }

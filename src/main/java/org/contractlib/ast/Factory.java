@@ -8,16 +8,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 
-public class Factory implements org.contractlib.factory.Commands<Term, Type, Abstraction, Datatype, Command> {
+public class Factory implements org.contractlib.factory.Commands<Term, Type, Abstraction, Datatype, FunDec, Command> {
     public Types types(List<String> params) {
         Types empty = new Types(Map.of());
         return empty.extend(params);
     }
 
+    @Override
     public Command declareSort(String name, Integer arity) {
         return new Command.DeclareSort(name, arity);
     }
 
+    @Override
     public Command defineSort(String name, List<String> params, Type body) {
         return new Command.DefineSort(name, params, body);
     }
@@ -32,34 +34,61 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Abs
     }
 
     @Override
+    public org.contractlib.factory.Functions<Type, FunDec> functions() {
+        return new Functions();
+    }
+
+    @Override
     public Command declareAbstractions(List<Pair<String, Integer>> arities,
                                        List<Abstraction> abstractions) {
         return new Command.DeclareAbstractions(arities, abstractions);
     }
 
+    @Override
     public Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes) {
         return new Command.DeclareDatatypes(arities, datatypes);
     }
 
+    @Override
     public Terms terms(List<Pair<String, Type>> variables) {
         Terms empty = new Terms(Map.of());
         return empty.extended(variables);
     }
 
+    @Override
     public Command declareFun(String name, List<String> params, List<Type> arguments, Type result) {
         return new Command.DeclareFun(name, params, arguments, result);
     }
 
+    @Override
+    public Command declareConst(String name, Type result) {
+        return new Command.DeclareConst(name, result);
+    }
+
+    @Override
+    public Command defineFunsRec(List<FunDec> functionDecls, List<Term> bodies) {
+        return new Command.DefineFunsRec(functionDecls, bodies);
+    }
+
+    @Override
+    public Command defineFunRec(String name, List<String> params, List<Pair<String, Type>> arguments, Type result,
+                                Term body) {
+        return new Command.DefineFunRec(name, params, arguments, result, body);
+    }
+
+    @Override
     public Command defineFun(String name, List<String> params, List<Pair<String, Type>> arguments, Type result,
             Term body) {
         return new Command.DefineFun(name, params, arguments, result, body);
     }
 
+    @Override
     public Command defineContract(String name, List<Pair<String, Pair<Mode, Type>>> formal,
                                   List<Pair<Term, Term>> contracts) {
         return new Command.DefineContract(name, formal, contracts);
     }
 
+    @Override
     public Command assertion(Term term) {
         return new Command.Assert(term);
     }
@@ -85,6 +114,14 @@ public class Factory implements org.contractlib.factory.Commands<Term, Type, Abs
         public Abstraction abstraction(List<String> params,
                                        List<Pair<String, List<Pair<String, List<Type>>>>> constructors) {
             return new Abstraction(params, constructors);
+        }
+    }
+
+    class Functions implements org.contractlib.factory.Functions<Type, FunDec> {
+        @Override
+        public FunDec funDec(String name, List<String> params, List<Pair<String, Type>> arguments,
+                               Type result) {
+            return new FunDec(name, params, arguments, result);
         }
     }
 

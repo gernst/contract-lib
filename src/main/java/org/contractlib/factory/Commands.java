@@ -4,29 +4,48 @@ import org.contractlib.util.Pair;
 
 import java.util.List;
 
-public interface Commands<Term, Type, Abstraction, Datatype, Command> {
-    Types<Type> types(List<String> params);
+/**
+ * An abstract factory for creating command data structures during parsing.
+ *
+ * @param <TERM>
+ * @param <TYPE>
+ * @param <ABSTRACTION>
+ * @param <DATATYPE>
+ * @param <FUNDEC>
+ * @param <COMMAND>
+ */
+public interface Commands<TERM, TYPE, ABSTRACTION, DATATYPE, FUNDEC, COMMAND> {
+    Types<TYPE> types(List<String> params);
 
-    Command declareSort(String name, Integer arity);
+    COMMAND declareSort(String name, Integer arity);
 
-    Command defineSort(String name, List<String> params, Type body);
+    COMMAND defineSort(String name, List<String> params, TYPE body);
 
-    Command declareAbstractions(List<Pair<String, Integer>> arities, List<Abstraction> abstractions);
+    COMMAND declareAbstractions(List<Pair<String, Integer>> arities, List<ABSTRACTION> abstractions);
 
-    Datatypes<Type, Datatype> datatypes(List<Pair<String, Integer>> arities);
+    Datatypes<TYPE, DATATYPE> datatypes(List<Pair<String, Integer>> arities);
 
-    Abstractions<Type, Abstraction> abstractions(List<Pair<String, Integer>> arities);
+    Abstractions<TYPE, ABSTRACTION> abstractions(List<Pair<String, Integer>> arities);
 
-    Command declareDatatypes(List<Pair<String, Integer>> arities, List<Datatype> datatypes);
+    Functions<TYPE, FUNDEC> functions();
 
-    Terms<Term, Type> terms(List<Pair<String, Type>> variables);
+    COMMAND declareDatatypes(List<Pair<String, Integer>> arities, List<DATATYPE> datatypes);
 
-    Command declareFun(String name, List<String> params, List<Type> arguments, Type result);
+    Terms<TERM, TYPE> terms(List<Pair<String, TYPE>> variables);
 
-    Command defineFun(String name, List<String> params, List<Pair<String, Type>> arguments, Type result, Term body);
+    COMMAND declareFun(String name, List<String> params, List<TYPE> arguments, TYPE result);
 
-    Command defineContract(String name, List<Pair<String, Pair<Mode, Type>>> arguments,
-                           List<Pair<Term, Term>> contracts);
+    COMMAND defineFun(String name, List<String> params, List<Pair<String, TYPE>> arguments, TYPE result, TERM body);
 
-    Command assertion(Term term);
+    COMMAND defineFunRec(String name, List<String> params, List<Pair<String, TYPE>> arguments, TYPE result, TERM body);
+
+    COMMAND defineContract(String name, List<Pair<String, Pair<Mode, TYPE>>> arguments,
+                           List<Pair<TERM, TERM>> contracts);
+
+    COMMAND assertion(TERM term);
+
+    COMMAND declareConst(String name, TYPE result);
+
+    COMMAND defineFunsRec(List<FUNDEC> functionDecls,
+                          List<TERM> bodies);
 }

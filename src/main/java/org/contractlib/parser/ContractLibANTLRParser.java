@@ -12,18 +12,46 @@ import org.contractlib.factory.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends ContractLIBBaseVisitor<Void> {
+/**
+ * Parser for CONTRACT-LIB based on the ANTLR4 grammar to be found in this repository. To use it,
+ * instantiate it with concrete types that implement the interfaces in the package
+ * {@link org.contractlib.factory}. In addition, an implementation of the interface {@link Commands}
+ * needs to be provided, which then acts as a factory for the concrete elements.
+ * The results of the parsing are stored in the list of commands, which can be obtained via
+ * {@link #getCommands()}.
+ *
+ * @param <TERM>
+ * @param <TYPE>
+ * @param <ABS>
+ * @param <DT>
+ * @param <FUNDECL>
+ * @param <COMMAND>
+ */
+public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, FUNDECL, COMMAND> extends ContractLIBBaseVisitor<Void> {
 
-    private final Commands<TERM, TYPE, ABS, DT, COMMAND> factory;
+    private final Commands<TERM, TYPE, ABS, DT, FUNDECL, COMMAND> factory;
 
     private final List<COMMAND> commands = new ArrayList<>();
 
-    public ContractLibANTLRParser(Commands<TERM, TYPE, ABS, DT, COMMAND> factory) {
+    public ContractLibANTLRParser(Commands<TERM, TYPE, ABS, DT, FUNDECL, COMMAND> factory) {
         this.factory = factory;
     }
 
     public List<COMMAND> getCommands() {
         return commands;
+    }
+
+    @Override
+    public Void visitCmd_assert(ContractLIBParser.Cmd_assertContext ctx) {
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        // TODO: this needs to be filled
+        List<Pair<String, TYPE>> vars = List.of();
+
+        TERM t = convertTerm(ctx.term(), factory.terms(vars), context);
+        commands.add(factory.assertion(t));
+        return null;
     }
 
     @Override
@@ -96,7 +124,7 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
     }
 
 
-    public String convertSymbol(ContractLIBParser.SymbolContext ctx) {
+    private String convertSymbol(ContractLIBParser.SymbolContext ctx) {
         if (ctx.quotedSymbol() != null) {
             return ctx.quotedSymbol().QuotedSymbol().getSymbol().getText();
         } else {
@@ -105,11 +133,157 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
     }
 
     @Override
+    public Void visitCmd_declareFun(ContractLIBParser.Cmd_declareFunContext ctx) {
+
+        // TODO: where do the parameters come from? Function declarations are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        String name = convertSymbol(ctx.symbol());
+        List<TYPE> args = new ArrayList<>();
+        int arity = ctx.sort().size() - 1;
+        for (int i = 0; i < arity; i++) {
+
+            args.add(convertSort(ctx.sort(i), context));
+        }
+        TYPE result = convertSort(ctx.sort(arity), context);
+
+        commands.add(factory.declareFun(name, params, args, result));
+        return null;
+    }
+
+    @Override
+    public Void visitCmd_declareConst(ContractLIBParser.Cmd_declareConstContext ctx) {
+        // TODO: where do the parameters come from? Function declarations are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        String name = convertSymbol(ctx.symbol());
+        TYPE result = convertSort(ctx.sort(), context);
+
+        commands.add(factory.declareConst(name, result));
+        return null;
+    }
+
+    @Override
+    public Void visitCmd_defineFun(ContractLIBParser.Cmd_defineFunContext ctx) {
+        // TODO: where do the parameters come from? Function definitions are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        FunctionDef<TYPE,TERM> fun = convertFunctionDef(ctx.function_def());
+        commands.add(factory.defineFun(fun.name, params, fun.args, fun.result, fun.body));
+        return null;
+    }
+
+    @Override
+    public Void visitCmd_defineFunRec(ContractLIBParser.Cmd_defineFunRecContext ctx) {
+        // TODO: where do the parameters come from? Function definitions are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        FunctionDef<TYPE,TERM> fun = convertFunctionDef(ctx.function_def());
+        commands.add(factory.defineFunRec(fun.name, params, fun.args, fun.result, fun.body));
+        return null;
+    }
+
+    private FunctionDef<TYPE, TERM> convertFunctionDef(ContractLIBParser.Function_defContext ctx) {
+
+        // TODO: where do the parameters come from? Function definitions are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        String name = convertSymbol(ctx.symbol());
+        List<Pair<String, TYPE>> args = convertSortedVars(ctx.sorted_var(), context);
+        TYPE result = convertSort(ctx.sort(), context);
+        TERM body = convertTerm(ctx.term(), factory.terms(args), context);
+
+        return new FunctionDef<>(name, args, result, body);
+    }
+
+    private FunctionDec<TYPE> convertFunctionDec(ContractLIBParser.Function_decContext ctx) {
+
+        // TODO: where do the parameters come from? Function definitions are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        String name = convertSymbol(ctx.symbol());
+        List<Pair<String, TYPE>> arguments = convertSortedVars(ctx.sorted_var(), context);
+        TYPE result = convertSort(ctx.sort(), context);
+
+        return new FunctionDec<>(name, arguments, result);
+    }
+
+    private record FunctionDef<TYPE, TERM>(String name, List<Pair<String, TYPE>> args, TYPE result, TERM body) {
+    }
+
+    private record FunctionDec<TYPE>(String name, List<Pair<String, TYPE>> args, TYPE result) {
+    }
+
+    @Override
+    public Void visitCmd_defineFunsRec(ContractLIBParser.Cmd_defineFunsRecContext ctx) {
+        // TODO: check sizes
+
+        // TODO: where do the parameters come from? Function definitions are non-parametric in
+        //  SMT-LIB ...
+        List<String> params = new ArrayList<>();
+        Types<TYPE> context = factory.types(params);
+
+        List<FUNDECL> functionDecls = new ArrayList<>();
+        List<Pair<String, TYPE>> scope = new ArrayList<>();
+        for (ContractLIBParser.Function_decContext fun : ctx.function_dec()) {
+            FunctionDec<TYPE> f = convertFunctionDec(fun);
+            FUNDECL fd = factory.functions().funDec(f.name, params, f.args, f.result);
+            scope.add(new Pair<>(f.name, f.result));     // TODO: I think this is wrong.
+            functionDecls.add(fd);
+        }
+
+        List<TERM> bodies = new ArrayList<>();
+        for (var t : ctx.term()) {
+            bodies.add(convertTerm(t, factory.terms(scope), context));
+        }
+        commands.add(factory.defineFunsRec(functionDecls, bodies));
+        return null;
+    }
+
+    @Override
+    public Void visitCmd_declareSort(ContractLIBParser.Cmd_declareSortContext ctx) {
+        String name = convertSymbol(ctx.symbol());
+        Integer arity = convertNumeral(ctx.numeral());
+        commands.add(factory.declareSort(name, arity));
+        return null;
+    }
+
+    @Override
+    public Void visitCmd_defineSort(ContractLIBParser.Cmd_defineSortContext ctx) {
+        List<String> ps = new ArrayList<>();
+        Types<TYPE> context = factory.types(ps);
+
+        // TODO: check ctx.symbol() size
+        String name = convertSymbol(ctx.symbol(0));
+
+        List<String> params = new ArrayList<>();
+        for (int i = 1; i < ctx.symbol().size(); i++) {
+            params.add(convertSymbol(ctx.symbol(i)));
+        }
+
+        TYPE body = convertSort(ctx.sort(), context);
+        commands.add(factory.defineSort(name, params, body));
+        return null;
+    }
+
+    private Integer convertNumeral(ContractLIBParser.NumeralContext numeral) {
+        return Integer.parseInt(numeral.Numeral().getText());
+    }
+
+    @Override
     public Void visitCmd_declareDatatypes(ContractLIBParser.Cmd_declareDatatypesContext ctx) {
         List<Pair<String, Integer>> arities = new ArrayList<>();
         for (var a : ctx.sort_dec()) {
             String name = convertSymbol(a.symbol());
-            Integer arity = Integer.parseInt(a.numeral().Numeral().getText());
+            Integer arity = convertNumeral(a.numeral());
             arities.add(new Pair<>(name, arity));
         }
 
@@ -176,27 +350,30 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
         return new Pair<>(pre, post);
     }
 
+    private List<Pair<String, TYPE>> convertSortedVars(List<ContractLIBParser.Sorted_varContext> ctxs,
+                                                       Types<TYPE> context) {
+        List<Pair<String, TYPE>> result = new ArrayList<>();
+        for (ContractLIBParser.Sorted_varContext bv : ctxs) {
+            result.add(convertSortedVar(bv, context));
+        }
+        return result;
+    }
+
     private TERM convertTerm(ContractLIBParser.TermContext ctx,
                              Terms<TERM, TYPE> scope,
-                             Types<TYPE> vars) {
+                             Types<TYPE> context) {
         if (ctx.GRW_Exists() != null) {
-            List<Pair<String, TYPE>> boundVars = new ArrayList<>();
-            for (ContractLIBParser.Sorted_varContext bv : ctx.sorted_var()) {
-                boundVars.add(convertSortedVar(bv, vars));
-            }
+            List<Pair<String, TYPE>> boundVars = convertSortedVars(ctx.sorted_var(), context);
             Terms<TERM, TYPE> ext = scope.extended(boundVars);
-            return scope.binder("exists", boundVars, convertTerm(ctx.term(0), ext, vars));
+            return scope.binder("exists", boundVars, convertTerm(ctx.term(0), ext, context));
 
         } else if (ctx.GRW_Forall() != null) {
-            List<Pair<String, TYPE>> boundVars = new ArrayList<>();
-            for (ContractLIBParser.Sorted_varContext bv : ctx.sorted_var()) {
-                boundVars.add(convertSortedVar(bv, vars));
-            }
+            List<Pair<String, TYPE>> boundVars = convertSortedVars(ctx.sorted_var(), context);
             Terms<TERM, TYPE> ext = scope.extended(boundVars);
-            return scope.binder("forall", boundVars, convertTerm(ctx.term(0), ext, vars));
+            return scope.binder("forall", boundVars, convertTerm(ctx.term(0), ext, context));
 
         } else if (ctx.GRW_Old() != null) {
-            return scope.old(convertTerm(ctx.term(0), scope, vars));
+            return scope.old(convertTerm(ctx.term(0), scope, context));
 
         } else if (ctx.spec_constant() != null) {
             return scope.literal(ctx.spec_constant().getText());
@@ -205,7 +382,7 @@ public class ContractLibANTLRParser<TERM, TYPE, ABS, DT, COMMAND> extends Contra
             String ident = ctx.qual_identifer().getText();
             List<TERM> args = new ArrayList<>();
             for (var t : ctx.term()) {
-                args.add(convertTerm(t, scope, vars));
+                args.add(convertTerm(t, scope, context));
             }
             if (args.isEmpty()) {
                 return scope.identifier(ident);

@@ -1,4 +1,14 @@
 ; various examples for testing, taken from the SMT-LIB standardisation document and our paper draft
+
+(declare-fun f (Int) Int)
+(declare-fun g (Bool Bool BankAccount) Int)
+(define-fun h ((x Int) (y Int)) Int (+ x y))
+(define-fun-rec r ((x Int) (y Int)) Int (+ x (r x y)))
+
+(assert (>= (f 5) 6))
+(assert (= (+ 2 3) 5))
+(assert (forall ((i Int)) (= i 5)))
+
 (define-contract BankAccount.init
   ((this (out BankAccount)))
   ((true (= (balance this) 0))))

@@ -7,12 +7,16 @@ import java.util.List;
 import java.util.Stack;
 import java.util.ArrayList;
 
-import org.contractlib.ast.Abstraction;
 import org.contractlib.util.Pair;
 
 import org.contractlib.sexpr.*;
 import org.contractlib.factory.*;
 
+/**
+ * This is the old parser for CONTRACT-LIB that is not based on the ANTLR grammar, but uses a simple
+ * jflex s-expression grammar. The commands are then matched and converted "by hand".
+ */
+@Deprecated
 public class HandwrittenParser extends Scanner {
     public HandwrittenParser(Reader reader) {
         super(reader);
@@ -104,7 +108,7 @@ public class HandwrittenParser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> List<Command> script(Commands<Term, Type, Abstraction, Datatype, Command> factory)
+    public <Term, Type, Abstraction, Datatype, FunDecl, Command> List<Command> script(Commands<Term, Type, Abstraction, Datatype, FunDecl, Command> factory)
             throws IOException {
         return repeat(() -> command(factory));
     }
@@ -320,7 +324,7 @@ public class HandwrittenParser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> Command command(Commands<Term, Type, Abstraction, Datatype, Command> factory)
+    public <Term, Type, Abstraction, Datatype, FunDecl, Command> Command command(Commands<Term, Type, Abstraction, Datatype, FunDecl, Command> factory)
             throws IOException {
         if (check(LPAREN)) {
             String command = identifier();

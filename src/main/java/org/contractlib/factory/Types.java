@@ -2,10 +2,10 @@ package org.contractlib.factory;
 
 import java.util.List;
 
-public interface Types<Type> {
-    Type identifier(String name);
+public interface Types<TYPE> {
+    TYPE identifier(String name);
 
-    Type sort(String name, List<Type> arguments);
+    TYPE sort(String name, List<TYPE> arguments);
 
-    Types<Type> extend(List<String> params);
+    Types<TYPE> extend(List<String> params);
 }
