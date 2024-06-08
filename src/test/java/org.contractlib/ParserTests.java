@@ -53,7 +53,7 @@ public class ParserTests {
 		Printer<SExpr> printer = new SExprPrinter();
 		for (SExpr expr : result) {
 			printer.print(expr, System.out);
-			System.out.println("\n");
+			System.out.println();
 		}
 	}
 
