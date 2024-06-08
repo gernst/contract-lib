@@ -16,7 +16,7 @@
   ((par (A)
       ((nil)
        (cons (head A)
-             (tail (Lst A)))))))
+             (tail (List A)))))))
 
 (declare-fun choose (Int Int) Int)
 

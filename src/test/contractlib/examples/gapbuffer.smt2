@@ -5,13 +5,13 @@
    (((GapBuffer (GapBuffer.position Int)
                 (GapBuffer.content (Seq Char))))))
 
-(declare-proc GapBuffer.init
+(declare-contract GapBuffer.init
     ((this (out GapBuffer)))
     ((true
-      (and (= (GapBuffer.position this) 0))
-           (= (GapBuffer.content  this) seq.empty))))
+      (and (= (GapBuffer.position this) 0)
+           (= (GapBuffer.content  this) seq.empty)))))
 
-(declare-proc GapBuffer.left
+(declare-contract GapBuffer.left
     ((this (inout GapBuffer)))
     (((< 0 (GapBuffer.position this))
       (and (= (GapBuffer.position this)
@@ -19,37 +19,37 @@
            (= (GapBuffer.content  this)
               (old (GapBuffer.content this)))))))
 
-(declare-proc GapBuffer.left
+(declare-contract GapBuffer.right
     ((this (inout GapBuffer)))
     (((< (GapBuffer.position this)
-         (seq.length (GapBuffer.content this)))
+         (seq.len (GapBuffer.content this)))
       (and (= (GapBuffer.position this)
               (+ (old (GapBuffer.position this)) 1))
            (= (GapBuffer.content  this)
               (old (GapBuffer.content this)))))))
 
-(declare-proc GapBuffer.insert
+(declare-contract GapBuffer.insert
     ((this (inout GapBuffer)) (char (in Char)))
     (((and (<= 0 (GapBuffer.position this))
            (<= (GapBuffer.position this)
-              (seq.length (GapBuffer.content this))))
+              (seq.len (GapBuffer.content this))))
       (and (= (GapBuffer.position this)
               (+ (old (GapBuffer.position this)) 1))
            (= (GapBuffer.content  this)
               (seq.++    (old (seq.extract (GapBuffer.content this) 0 (GapBuffer.position this)))
                  (seq.++ (seq.unit char)
-                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.length (GapBuffer.content this)))))))))))
+                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.len (GapBuffer.content this)))))))))))
 
-(declare-proc GapBuffer.delete
+(declare-contract GapBuffer.delete
     ((this (inout GapBuffer)))
     (((< 0 (GapBuffer.position this))
       (and (= (GapBuffer.position this)
               (- (old (GapBuffer.position this)) 1))
            (= (GapBuffer.content  this)
               (seq.++    (old (seq.extract (GapBuffer.content this) 0 (- (GapBuffer.position this) 1)))
-                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.length (GapBuffer.content this))))))))))
+                         (old (seq.extract (GapBuffer.content this) (GapBuffer.position this) (seq.len (GapBuffer.content this))))))))))
 
-(declare-proc GapBuffer.view
+(declare-contract GapBuffer.view
     ((this (in GapBuffer)) (content (out (Seq Char))))
     ((true
       (= content

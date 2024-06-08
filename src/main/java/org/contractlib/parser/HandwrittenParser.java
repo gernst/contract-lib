@@ -12,8 +12,13 @@ import org.contractlib.util.Pair;
 import org.contractlib.sexpr.*;
 import org.contractlib.factory.*;
 
-public class Parser extends Scanner {
-    public Parser(Reader reader) {
+/**
+ * This is the old parser for CONTRACT-LIB that is not based on the ANTLR grammar, but uses a simple
+ * jflex s-expression grammar. The commands are then matched and converted "by hand".
+ */
+@Deprecated
+public class HandwrittenParser extends Scanner {
+    public HandwrittenParser(Reader reader) {
         super(reader);
     }
 
@@ -103,7 +108,7 @@ public class Parser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> List<Command> script(Commands<Term, Type, Datatype, Command> factory)
+    public <Term, Type, Abstraction, Datatype, FunDecl, Command> List<Command> script(Commands<Term, Type, Abstraction, Datatype, FunDecl, Command> factory)
             throws IOException {
         return repeat(() -> command(factory));
     }
@@ -136,6 +141,10 @@ public class Parser extends Scanner {
 
     public <Type, Datatype> List<Datatype> datatypes(Datatypes<Type, Datatype> data) throws IOException {
         return repeat(() -> datatype(data));
+    }
+
+    public <Type, Abstraction> List<Abstraction> abstractions(Abstractions<Type, Abstraction> data) throws IOException {
+        return repeat(() -> abstraction(data));
     }
 
     public <Type> List<Pair<String, Pair<Mode, Type>>> formalsWithMode(Types<Type> context) throws IOException {
@@ -266,6 +275,20 @@ public class Parser extends Scanner {
         }
     }
 
+    public <Type, Abstraction> Abstraction abstraction(Abstractions<Type, Abstraction> data) throws IOException {
+        if (peek(LPAREN)) {
+            return maybeParametricWithImplicitLParen((params) -> {
+                Types<Type> context = data.types(params);
+                List<Pair<String, List<Pair<String, List<Type>>>>> constructors = constructors(context);
+                expect(RPAREN);
+
+                return data.abstraction(params, constructors);
+            });
+        } else {
+            return null;
+        }
+    }
+
     public Mode mode() throws IOException {
         String id = identifier();
 
@@ -301,7 +324,7 @@ public class Parser extends Scanner {
         }
     }
 
-    public <Term, Type, Datatype, Command> Command command(Commands<Term, Type, Datatype, Command> factory)
+    public <Term, Type, Abstraction, Datatype, FunDecl, Command> Command command(Commands<Term, Type, Abstraction, Datatype, FunDecl, Command> factory)
             throws IOException {
         if (check(LPAREN)) {
             String command = identifier();
@@ -381,7 +404,16 @@ public class Parser extends Scanner {
                 return factory.declareDatatypes(arities, datatypes);
             }
 
-            case "declare-proc": {
+            case "declare-abstractions": {
+                List<Pair<String, Integer>> arities = parens(() -> arities());
+                Abstractions<Type, Abstraction> data = factory.abstractions(arities);
+
+                List<Abstraction> abstractions = parens(() -> abstractions(data));
+
+                return factory.declareAbstractions(arities, abstractions);
+            }
+
+            case "define-contract": {
                 String procedure = identifier();
                 List<String> params = List.of();
                 Types<Type> context = factory.types(params);
@@ -396,7 +428,7 @@ public class Parser extends Scanner {
                 List<Pair<Term, Term>> contracts = parens(() -> contracts(context, scope));
                 expect(RPAREN);
 
-                return factory.declareProc(procedure, params, arguments, contracts);
+                return factory.defineContract(procedure, arguments, contracts);
 
             }
 

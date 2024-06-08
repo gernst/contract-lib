@@ -1,15 +1,21 @@
-(declare-proc Counter.init
-    ((counter (out Int)))
-    ((true
-      (= counter 0))))
+(declare-abstraction
+    ((Counter 0))
+    (((Counter ((value Int))))))
 
-(declare-proc Counter.value
-    ((counter (in Int))
+(declare-contract Counter.init
+    ((this (out Counter)))
+    ((true (= (value this) 0))))
+
+(declare-contract Counter.value
+    ((this (in Counter))
      (result (out Int)))
-    ((true
-      (= result counter))))
+    ((true (= result (value this)))))
 
-(declare-proc Counter.increment
-    ((counter (out Int)))
-    ((true
-      (= counter (+ 1 (old counter))))))
+(declare-contract Counter.increment
+    ((this (inout Counter)))
+    ((true (= (value this) (+ 1 (old (value this)))))))
+
+(declare-contract Counter.decrement
+    ((this (inout Counter)))
+    (((< 0 (value this))
+      (= (value this) (+ 1 (old (value this)))))))
